@@ -1,26 +1,34 @@
+import fs from 'fs';
+import path from 'path';
+
 import pool from '../config/db';
 
 export const initDb = async () => {
   try {
-    await pool.query(`
-      CREATE TABLE IF NOT EXISTS pets (
-        id SERIAL PRIMARY KEY,
-        type VARCHAR(20) NOT NULL,
-        weight INT,
-        character VARCHAR(20),
-        age INT,
-        gender VARCHAR(20),
-        fur VARCHAR(20),
-        description TEXT,
-        images TEXT[],
-        status VARCHAR(50),
-        health VARCHAR(50),
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      );
-    `);
 
-    console.log('✅ Таблица pets готова');
+    const migrations = [
+      '001_create_pets.sql',
+      '002_create_curators.sql',
+      '003_create_messengers.sql',
+      '004_create_pet_images.sql',
+      '005_create_pet_stories.sql',
+      '006_create_requests.sql'
+    ];
+
+    for (const file of migrations) {
+      const sqlPath = path.join(
+        __dirname,
+        'migrations',
+        file
+      );
+      const sql = fs.readFileSync(sqlPath, 'utf-8');
+      await pool.query(sql);
+      console.log(`✅ Выполнен ${file}`);
+    }
+
+    console.log('✅ База данных готова');
+
   } catch (err) {
-    console.error('❌ Ошибка создания таблицы', err);
+    console.error('❌ Ошибка инициализации БД', err);
   }
 };

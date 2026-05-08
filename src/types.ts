@@ -1,37 +1,66 @@
-export type AnimalType = 'Кошка' | 'Собака';
+export type PetCategory = 'Кошка' | 'Собака';
 
-export type CharacterType = 'Спокойный' | 'Активный';
+export type PetGender = 'Мальчик' | 'Девочка';
 
-export type GenderType = 'Мальчик' | 'Девочка';
+export type PetWool = 'Короткая' | 'Длинная';
 
-export type FurType = 'Короткая' | 'Длинная';
+export type PetCharacter = 'Спокойный' | 'Активный';
 
-export type PetStatus =
-  | 'В приюте'
-  | 'На передержке'
-  | 'В добрых руках'
-  | 'Умерло';
+export interface ICurator {
+    id: string;
+    last_name: string;
+    first_name: string;
+    middle_name: string;
+    description: string;
+    image: string;
+    birthday: string;
+    phone_number: string;
+}
 
-export type Other = 
-  | 'Для семьи с детьми'        
-  | 'Ладит с собаками'       
-  | 'Ладит с кошками'        
-  | 'На передержке'; 
-
-export type Health = 'Здоровая' | 'Подготовка к операции' | 'На лечение'
+export interface IMessenger {
+    id: string;
+    curator_id: string;
+    messenger: string;
+    nickname: string;
+}
 
 export interface IPet {
-  id: number;
-  type: AnimalType;           // кошка / собака
-  weight: number;             // вес в кг
-  character: CharacterType;   // спокойный / активный
-  age: number;                // возраст (в годах)
-  gender: GenderType;         // пол
-  fur: FurType;               // тип шерсти
-  description: string;        // описание
-  images: string[];           // массив картинок
-  status: PetStatus;          // статус животного
-  other: Other[];             // другие характеристики 
-  health: Health;             // здоровье 
-  comment?: string;           // комментарий
+    id: string;
+    nickname: string;
+    category: PetCategory;
+    size: number;
+    character: PetCharacter;
+    birthday: string;
+    gender: PetGender;
+    wool: PetWool;
+    for_family: boolean;
+    for_dogs: boolean;
+    for_cats: boolean;
+    is_guest: boolean;
+    description: string;
+    curator_id: string;
+}
+
+export interface IPetImage {
+    id: string;
+    pet_id: string;
+    image: string;
+    number: number;
+}
+
+export interface IPetHistory {
+    id: string;
+    pet_id: string;
+    event: string;
+    description: string;
+}
+
+export interface IRequest {
+    id: string;
+    name: string;
+    contact: string;
+    by_phone: boolean;
+    on_messenger: boolean;
+    pet_id: string;
+    comment: string;
 }

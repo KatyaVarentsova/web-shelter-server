@@ -1,0 +1,10 @@
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
+CREATE TABLE IF NOT EXISTS pet_images (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    pet_id UUID REFERENCES pets(id) ON DELETE CASCADE,
+    image TEXT NOT NULL,
+    number INTEGER NOT NULL DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(pet_id, number)
+);
