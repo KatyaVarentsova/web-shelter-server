@@ -4,7 +4,19 @@ import pool from '../config/db';
 class PetsController {
   async getPets(req: Request, res: Response) {
     try {
-      const result = await pool.query('SELECT * FROM pets');
+      const result = await pool.query(`
+        select pets.*, 
+        coalesce (json_agg(json_build_object (
+        'id', pet_images.id, 'image', pet_images.image, 'number', pet_images.number) 
+        ) FILTER (
+                    WHERE pet_images.id IS NOT NULL
+                ),
+                '[]'
+        ) as images from pets
+        LEFT JOIN pet_images
+        ON pets.id = pet_images.pet_id
+        GROUP BY pets.id;
+        `);
       res.json(result.rows);
     } catch (err: any) {
       res.status(500).json({ error: err.message });
@@ -13,25 +25,25 @@ class PetsController {
 
   async createPet(req: Request, res: Response) {
     const {
-        nickname,
-        category,
-        size,
-        character,
-        birthday,
-        gender,
-        wool,
-        for_family,
-        for_dogs,
-        for_cats,
-        is_guest,
-        description,
-        curator_id
+      nickname,
+      category,
+      size,
+      character,
+      birthday,
+      gender,
+      wool,
+      for_family,
+      for_dogs,
+      for_cats,
+      is_guest,
+      description,
+      curator_id
     } = req.body;
 
     try {
-        const result = await pool.query(
-            `
-            INSERT INTO pet (
+      const result = await pool.query(
+        `
+            INSERT INTO pets (
                 nickname,
                 category,
                 size,
@@ -51,31 +63,31 @@ class PetsController {
             )
             RETURNING *
             `,
-            [
-                nickname,
-                category,
-                size,
-                character,
-                birthday,
-                gender,
-                wool,
-                for_family,
-                for_dogs,
-                for_cats,
-                is_guest,
-                description,
-                curator_id
-            ]
-        );
+        [
+          nickname,
+          category,
+          size,
+          character,
+          birthday,
+          gender,
+          wool,
+          for_family,
+          for_dogs,
+          for_cats,
+          is_guest,
+          description,
+          curator_id
+        ]
+      );
 
-        res.status(201).json(result.rows[0]);
+      res.status(201).json(result.rows[0]);
 
     } catch (err: any) {
-        res.status(500).json({
-            error: err.message
-        });
+      res.status(500).json({
+        error: err.message
+      });
     }
-}
+  }
 
   async getPetId(req: Request, res: Response) {
     const { id } = req.params;
@@ -96,25 +108,25 @@ class PetsController {
     const { id } = req.params;
 
     const {
-        nickname,
-        category,
-        size,
-        character,
-        birthday,
-        gender,
-        wool,
-        for_family,
-        for_dogs,
-        for_cats,
-        is_guest,
-        description,
-        curator_id
+      nickname,
+      category,
+      size,
+      character,
+      birthday,
+      gender,
+      wool,
+      for_family,
+      for_dogs,
+      for_cats,
+      is_guest,
+      description,
+      curator_id
     } = req.body;
 
     try {
-        const result = await pool.query(
-            `
-            UPDATE pet SET
+      const result = await pool.query(
+        `
+            UPDATE pets SET
                 nickname = $1,
                 category = $2,
                 size = $3,
@@ -131,38 +143,38 @@ class PetsController {
             WHERE id = $14
             RETURNING *
             `,
-            [
-                nickname,
-                category,
-                size,
-                character,
-                birthday,
-                gender,
-                wool,
-                for_family,
-                for_dogs,
-                for_cats,
-                is_guest,
-                description,
-                curator_id,
-                id
-            ]
-        );
+        [
+          nickname,
+          category,
+          size,
+          character,
+          birthday,
+          gender,
+          wool,
+          for_family,
+          for_dogs,
+          for_cats,
+          is_guest,
+          description,
+          curator_id,
+          id
+        ]
+      );
 
-        if (result.rows.length === 0) {
-            return res.status(404).json({
-                error: 'Животное не найдено'
-            });
-        }
+      if (result.rows.length === 0) {
+        return res.status(404).json({
+          error: 'Животное не найдено'
+        });
+      }
 
-        res.json(result.rows[0]);
+      res.json(result.rows[0]);
 
     } catch (err: any) {
-        res.status(500).json({
-            error: err.message
-        });
+      res.status(500).json({
+        error: err.message
+      });
     }
-}
+  }
 
   async deletePet(req: Request, res: Response) {
     const { id } = req.params;

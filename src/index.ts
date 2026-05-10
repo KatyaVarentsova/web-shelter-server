@@ -1,7 +1,9 @@
 import express from 'express';
 import cors from 'cors';
 import bodyParser from 'body-parser';
-import petsRoutes from './routes/pet.routes'; 
+import petsRoutes from './routes/pets.routes'; 
+import curatorsRoutes from './routes/curators.routes';
+import petImagesRoutes from './routes/petImages.routes';
 import pool from './config/db';
 import { initDb } from './database/initDb';
 
@@ -18,7 +20,9 @@ pool.query('SELECT NOW()', (err, res) => {
 });
 
 initDb();
-app.use('/api', petsRoutes);
+app.use('/api/pets', petsRoutes);
+app.use('/api/curators', curatorsRoutes);
+app.use('/api/pet-images', petImagesRoutes);
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`http://localhost:${PORT}`));

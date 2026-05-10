@@ -9,5 +9,6 @@ CREATE TABLE IF NOT EXISTS curators (
     image TEXT,
     birthday DATE,
     phone_number VARCHAR(20) UNIQUE NOT NULL,
+    nickname VARCHAR(30) NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );

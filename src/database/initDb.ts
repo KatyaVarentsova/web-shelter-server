@@ -7,12 +7,12 @@ export const initDb = async () => {
   try {
 
     const migrations = [
-      '001_create_pets.sql',
-      '002_create_curators.sql',
-      '003_create_messengers.sql',
-      '004_create_pet_images.sql',
-      '005_create_pet_stories.sql',
-      '006_create_requests.sql'
+      '001_create_curators.sql',
+      '002_create_pets.sql',
+      '003_create_pet_images.sql',
+      '004_create_pet_stories.sql',
+      '005_create_requests.sql',
+      '006_create_messengers.sql'
     ];
 
     for (const file of migrations) {
