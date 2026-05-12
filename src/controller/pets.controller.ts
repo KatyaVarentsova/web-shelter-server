@@ -5,17 +5,17 @@ class PetsController {
   async getPets(req: Request, res: Response) {
     try {
       const result = await pool.query(`
-        select pets.*, 
-        coalesce (json_agg(json_build_object (
-        'id', pet_images.id, 'image', pet_images.image, 'number', pet_images.number) 
-        ) FILTER (
-                    WHERE pet_images.id IS NOT NULL
-                ),
-                '[]'
-        ) as images from pets
+        SELECT
+          pets.id,
+          pets.nickname,
+          pets.category,
+          pets.birthday,
+          pets.gender,
+          pet_images.image
+        FROM pets
         LEFT JOIN pet_images
-        ON pets.id = pet_images.pet_id
-        GROUP BY pets.id;
+          ON pets.id = pet_images.pet_id
+          AND pet_images.number = 1
         `);
       res.json(result.rows);
     } catch (err: any) {
@@ -94,9 +94,35 @@ class PetsController {
 
     try {
       const result = await pool.query(
-        'SELECT * FROM pets WHERE id = $1',
+        `
+        SELECT
+        pets.*,
+          COALESCE(
+            json_agg(
+              json_build_object(
+                'id', pet_images.id,
+                'image', pet_images.image,
+                'number', pet_images.number
+                )
+            ) FILTER (
+            WHERE pet_images.id IS NOT NULL
+            ),
+            '[]'
+          ) AS images
+        FROM pets
+        LEFT JOIN pet_images
+            ON pets.id = pet_images.pet_id
+            WHERE pets.id = $1
+            GROUP BY pets.id
+        `,
         [id]
       );
+
+      if (result.rows.length === 0) {
+            return res.status(404).json({
+                error: 'Животное не найдено'
+            });
+        }
 
       res.json(result.rows[0]);
     } catch (err: any) {
