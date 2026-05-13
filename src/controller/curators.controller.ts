@@ -4,11 +4,30 @@ import pool from '../config/db';
 class CuratorsController {
     async getCurators(req: Request, res: Response) {
         try {
-            const result = await pool.query('SELECT * FROM curators');
+            const result = await pool.query(`
+                SELECT
+                curators.*,
+                COALESCE(
+                    json_agg(
+                    json_build_object(
+                        'id', messengers.id,
+                        'messenger', messengers.messenger,
+                        'nickname', messengers.nickname
+                        )
+                    ) FILTER (
+                    WHERE messengers.id IS NOT NULL
+                    ),
+                    '[]'
+                ) AS messengers
+                FROM curators
+                LEFT JOIN messengers
+                    ON curators.id = messengers.curator_id
+                    GROUP BY curators.id
+                `);
             res.json(result.rows);
         }
-        catch(err:any) {
-            res.status(500).json({error: err.message})
+        catch (err: any) {
+            res.status(500).json({ error: err.message })
         }
     }
 
@@ -56,12 +75,50 @@ class CuratorsController {
 
             res.status(201).json(result.rows[0]);
 
-        } catch(err: any) {
+        } catch (err: any) {
             res.status(500).json({
                 error: err.message
             });
         }
     }
-} 
+
+    async getCuratorId(req: Request, res: Response) {
+        const { id } = req.params;
+        try {
+            const result = await pool.query(`
+                SELECT
+                curators.*,
+                COALESCE(
+                    json_agg(
+                    json_build_object(
+                        'id', messengers.id,
+                        'messenger', messengers.messenger,
+                        'nickname', messengers.nickname
+                        )
+                    ) FILTER (
+                    WHERE messengers.id IS NOT NULL
+                    ),
+                    '[]'
+                ) AS messengers
+                FROM curators
+                LEFT JOIN messengers
+                    ON curators.id = messengers.curator_id
+                    WHERE curators.id = $1
+                    GROUP BY curators.id
+                `,
+                [id]
+            );
+            if (result.rows.length === 0) {
+                return res.status(404).json({
+                    error: 'Куратор не найден'
+                });
+            }
+            res.json(result.rows[0]);
+        }
+        catch (err: any) {
+            res.status(500).json({ error: err.message })
+        }
+    }
+}
 
 export default new CuratorsController();
