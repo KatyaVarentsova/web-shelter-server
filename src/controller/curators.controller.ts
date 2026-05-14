@@ -87,7 +87,12 @@ class CuratorsController {
         try {
             const result = await pool.query(`
                 SELECT
-                curators.*,
+                curators.id,
+                curators.last_name,
+                curators.first_name,
+                curators.description,
+                curators.image,
+                curators.phone_number,
                 COALESCE(
                     json_agg(
                     json_build_object(
