@@ -5,6 +5,7 @@ import petsRoutes from './routes/pets.routes';
 import curatorsRoutes from './routes/curators.routes';
 import petImagesRoutes from './routes/petImages.routes';
 import messengersRoutes from './routes/messengers.routes';
+import requestsRoutes from './routes/requests.routes';
 import pool from './config/db';
 import { initDb } from './database/initDb';
 
@@ -25,6 +26,7 @@ app.use('/api/pets', petsRoutes);
 app.use('/api/curators', curatorsRoutes);
 app.use('/api/pet-images', petImagesRoutes);
 app.use('/api/messengers', messengersRoutes);
+app.use('/api/requests', requestsRoutes);
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`http://localhost:${PORT}`));
