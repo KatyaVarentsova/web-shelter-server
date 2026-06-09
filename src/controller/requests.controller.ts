@@ -1,0 +1,84 @@
+import { Request, Response } from 'express';
+import pool from '../config/db';
+
+class RequestsController {
+    async getRequests(req: Request, res: Response) {
+        try {
+            const result = await pool.query(`
+            SELECT *
+            FROM requests
+        `);
+
+            return res.status(200).json(result.rows);
+        } catch (err: any) {
+            return res.status(500).json({
+                error: err.message
+            });
+        }
+    }
+
+    async createRequest(req: Request, res: Response) {
+        const {
+            curator_id,
+            pet_id,
+            name,
+            contact,
+            by_phone,
+            on_messenger,
+            comment
+        } = req.body;
+
+        if (!name?.trim()) {
+            return res.status(400).json({
+                error: "Имя обязательно"
+            });
+        }
+
+        if (!contact?.trim()) {
+            return res.status(400).json({
+                error: "Контактные данные обязательны"
+            });
+        }
+
+        if (!by_phone && !on_messenger) {
+            return res.status(400).json({
+                error: "Укажите хотя бы один способ связи"
+            });
+        }
+
+        try {
+            const result = await pool.query(
+                `
+                INSERT INTO requests (
+                    curator_id,
+                    pet_id,
+                    name,
+                    contact,
+                    by_phone,
+                    on_messenger,
+                    comment
+                )
+                VALUES ($1,$2,$3,$4,$5,$6,$7)
+                RETURNING *
+                `,
+                [
+                    curator_id,
+                    pet_id,
+                    name,
+                    contact,
+                    by_phone,
+                    on_messenger,
+                    comment
+                ]
+            );
+
+            return res.status(201).json(result.rows[0]);
+        } catch (err: any) {
+            return res.status(500).json({
+                error: err.message
+            });
+        }
+    }
+}
+
+export default new RequestsController();
