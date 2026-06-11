@@ -5,8 +5,19 @@ class RequestsController {
     async getRequests(req: Request, res: Response) {
         try {
             const result = await pool.query(`
-            SELECT *
-            FROM requests
+            SELECT 
+                r.id,
+                r.status,
+                r.name,
+                r.comment,
+                r.pet_id,
+                p.nickname AS pet_nickname,
+                r.contact,
+                r.by_phone,
+                r.on_messenger
+            FROM requests r
+            LEFT JOIN pets p ON p.id = r.pet_id
+            ORDER BY r.created_at DESC
         `);
 
             return res.status(200).json(result.rows);

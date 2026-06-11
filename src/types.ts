@@ -1,3 +1,5 @@
+import { Request } from "express";
+
 export type PetCategory = 'Кошка' | 'Собака';
 
 export type PetGender = 'Мальчик' | 'Девочка';
@@ -63,4 +65,17 @@ export interface IRequest {
     on_messenger: boolean;
     pet_id: string;
     comment: string;
+}
+
+export interface IUser {
+    id: string;
+    login: string;
+    password: string;
+}
+
+export interface AuthRequest extends Request {
+    tokenData?: {
+        id: string;
+        role: string;
+    };
 }
