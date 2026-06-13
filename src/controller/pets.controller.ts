@@ -1,4 +1,4 @@
-import { Request, Response } from 'express';
+import { NextFunction, Request, Response } from 'express';
 import pool from '../config/db';
 
 class PetsController {
@@ -119,10 +119,10 @@ class PetsController {
       );
 
       if (result.rows.length === 0) {
-            return res.status(404).json({
-                error: 'Животное не найдено'
-            });
-        }
+        return res.status(404).json({
+          error: 'Животное не найдено'
+        });
+      }
 
       res.json(result.rows[0]);
     } catch (err: any) {
@@ -202,12 +202,59 @@ class PetsController {
     }
   }
 
-  async deletePet(req: Request, res: Response) {
+  async deletePet(req: Request, res: Response, next: NextFunction) {
     const { id } = req.params;
 
     try {
-      await pool.query('DELETE FROM pets WHERE id = $1', [id]);
-      res.json({ message: 'Удалено' });
+      const result = await pool.query('DELETE FROM pets WHERE id = $1', [id]);
+      if (result.rowCount === 0) {
+        return res.status(404).json({
+          error: 'Питомец не найден',
+        });
+      }
+      return next();
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  }
+
+  async getPetsDogs(req: Request, res: Response) {
+    try {
+      const result = await pool.query(`
+        SELECT
+          pets.id,
+          pets.nickname,
+          pets.birthday,
+          pets.gender,
+          curators.last_name,
+          curators.first_name
+        FROM pets
+        LEFT JOIN curators
+          ON pets.curator_id = curators.id
+        WHERE pets.category = 'Собака'
+        `);
+      res.json(result.rows);
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  }
+
+  async getPetsCats(req: Request, res: Response) {
+    try {
+      const result = await pool.query(`
+        SELECT
+          pets.id,
+          pets.nickname,
+          pets.birthday,
+          pets.gender,
+          curators.last_name,
+          curators.first_name
+        FROM pets
+        LEFT JOIN curators
+          ON pets.curator_id = curators.id
+        WHERE pets.category = 'Кошка'
+        `);
+      res.json(result.rows);
     } catch (err: any) {
       res.status(500).json({ error: err.message });
     }
