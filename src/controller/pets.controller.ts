@@ -23,7 +23,7 @@ class PetsController {
     }
   }
 
-  async createPet(req: Request, res: Response) {
+  async createPet(req: Request, res: Response,  next: NextFunction) {
     const {
       nickname,
       category,
@@ -37,11 +37,17 @@ class PetsController {
       for_cats,
       is_guest,
       description,
-      curator_id
+      curator_id,
+      image_1,
+      image_2,
+      image_3,
+      image_4,
+      image_5,
     } = req.body;
-
+    const client = await pool.connect();
     try {
-      const result = await pool.query(
+      await client.query('BEGIN');
+      const petResult = await client.query(
         `
             INSERT INTO pets (
                 nickname,
@@ -76,16 +82,52 @@ class PetsController {
           for_cats,
           is_guest,
           description,
-          curator_id
+          curator_id,
         ]
       );
 
-      res.status(201).json(result.rows[0]);
+      const pet = petResult.rows[0];
 
+      const images = [
+        image_1,
+        image_2,
+        image_3,
+        image_4,
+        image_5,
+      ];
+
+      for (let i = 0; i < images.length; i++) {
+        if (images[i] !== '') {
+          await client.query(
+            `
+                INSERT INTO pet_images (
+                    pet_id,
+                    image,
+                    number
+                )
+                VALUES (
+                    $1,
+                    $2,
+                    $3
+                )
+                `,
+            [
+              pet.id,
+              images[i],
+              i + 1,
+            ]
+          );
+        }
+      }
+      await client.query('COMMIT');
+      return next();
     } catch (err: any) {
-      res.status(500).json({
-        error: err.message
+      await client.query('ROLLBACK');
+      return res.status(500).json({
+        error: err.message,
       });
+    } finally {
+      client.release();
     }
   }
 
