@@ -7,5 +7,6 @@ const router = Router();
 router.get('/', validateTokenMiddleware, RequestsController.getRequests);
 router.post('/', RequestsController.createRequest);
 router.delete('/:id', validateTokenMiddleware, RequestsController.deleteRequest, RequestsController.getRequests);
+router.patch('/:id', validateTokenMiddleware, RequestsController.updateRequestStatus);
 
 export default router;

@@ -112,6 +112,36 @@ class RequestsController {
             });
         }
     }
+
+    async updateRequestStatus(req: Request, res: Response) {
+        const { id } = req.params;
+        const { status } = req.body;
+
+        try {
+            const result = await pool.query(
+                `
+            UPDATE requests
+            SET status = $1
+            WHERE id = $2
+            RETURNING *
+            `,
+                [status, id]
+            );
+
+            if (result.rowCount === 0) {
+                return res.status(404).json({
+                    error: 'Заявка не найдена',
+                });
+            }
+
+            return res.json(result.rows[0]);
+
+        } catch (err: any) {
+            return res.status(500).json({
+                error: err.message,
+            });
+        }
+    }
 }
 
 export default new RequestsController();
