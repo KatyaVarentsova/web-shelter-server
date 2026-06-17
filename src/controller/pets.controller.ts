@@ -23,6 +23,143 @@ class PetsController {
     }
   }
 
+  async postPetsByFilter(req: Request, res: Response) {
+    const {
+        type,
+        size,
+        character,
+        age,
+        gender,
+        wool,
+        other,
+    } = req.body;
+
+    try {
+        let query = `
+            SELECT
+                pets.id,
+                pets.nickname,
+                pets.category,
+                pets.birthday,
+                pets.gender,
+                pet_images.image
+            FROM pets
+            LEFT JOIN pet_images
+                ON pets.id = pet_images.pet_id
+                AND pet_images.number = 1
+            WHERE 1 = 1
+        `;
+
+        const values: any[] = [];
+        let index = 1;
+
+        if (type) {
+            query += ` AND pets.category = $${index++}`;
+            values.push(type);
+        }
+
+        if (character) {
+            query += ` AND pets.character = $${index++}`;
+            values.push(character);
+        }
+
+        if (gender) {
+            query += ` AND pets.gender = $${index++}`;
+            values.push(gender);
+        }
+
+        if (wool) {
+            query += ` AND pets.wool = $${index++}`;
+            values.push(wool);
+        }
+
+        // Размер
+        if (size === 'До 10 кг') {
+            query += ` AND pets.size <= $${index++}`;
+            values.push(10);
+        }
+
+        if (size === 'От 10 до 30 кг') {
+            query += ` AND pets.size >= $${index++} AND pets.size <= $${index++}`;
+            values.push(10, 30);
+        }
+
+        if (size === 'От 30 кг') {
+            query += ` AND pets.size >= $${index++}`;
+            values.push(30);
+        }
+
+        // Возраст
+        if (age) {
+            const today = new Date();
+
+            if (age === 'До 1 года') {
+                const date = new Date(today);
+                date.setFullYear(date.getFullYear() - 1);
+
+                query += ` AND pets.birthday >= $${index++}`;
+                values.push(date);
+            }
+
+            if (age === 'От 1 года до 5 лет') {
+                const max = new Date(today);
+                max.setFullYear(max.getFullYear() - 1);
+
+                const min = new Date(today);
+                min.setFullYear(min.getFullYear() - 5);
+
+                query += ` AND pets.birthday BETWEEN $${index++} AND $${index++}`;
+                values.push(min, max);
+            }
+
+            if (age === 'От 5 лет до 10 лет') {
+                const max = new Date(today);
+                max.setFullYear(max.getFullYear() - 5);
+
+                const min = new Date(today);
+                min.setFullYear(min.getFullYear() - 10);
+
+                query += ` AND pets.birthday BETWEEN $${index++} AND $${index++}`;
+                values.push(min, max);
+            }
+
+            if (age === 'Старше 10 лет') {
+                const date = new Date(today);
+                date.setFullYear(date.getFullYear() - 10);
+
+                query += ` AND pets.birthday <= $${index++}`;
+                values.push(date);
+            }
+        }
+
+        // Чекбоксы
+        if (other?.includes('Для семьи с детьми')) {
+            query += ` AND pets.for_family = true`;
+        }
+
+        if (other?.includes('Ладит с собаками')) {
+            query += ` AND pets.for_dogs = true`;
+        }
+
+        if (other?.includes('Ладит с кошками')) {
+            query += ` AND pets.for_cats = true`;
+        }
+
+        if (other?.includes('На передержке')) {
+            query += ` AND pets.is_guest = true`;
+        }
+
+        const result = await pool.query(query, values);
+
+        return res.json(result.rows);
+
+    } catch (err: any) {
+        return res.status(500).json({
+            error: err.message,
+        });
+    }
+}
+
   async createPet(req: Request, res: Response, next: NextFunction) {
     const {
       nickname,

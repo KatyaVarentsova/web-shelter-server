@@ -8,6 +8,7 @@ router.get('/', PetsController.getPets);
 router.get('/dogs', validateTokenMiddleware, PetsController.getPetsDogs);
 router.get('/cats', validateTokenMiddleware, PetsController.getPetsCats);
 router.get('/:id', PetsController.getPetId);
+router.post('/filter', PetsController.postPetsByFilter);
 router.post('/dogs', validateTokenMiddleware, PetsController.createPet, PetsController.getPetsDogs);
 router.post('/cats', validateTokenMiddleware, PetsController.createPet, PetsController.getPetsCats);
 router.put('/dogs/:id', validateTokenMiddleware, PetsController.updatePet, PetsController.getPetsDogs);
