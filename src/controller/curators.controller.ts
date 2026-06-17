@@ -31,6 +31,23 @@ class CuratorsController {
         }
     }
 
+    async getShortCurators(req: Request, res: Response) {
+        try {
+            const result = await pool.query(`
+                SELECT
+                curators.id,
+                curators.last_name,
+                curators.first_name,
+                curators.middle_name
+                FROM curators
+                `);
+            res.json(result.rows);
+        }
+        catch (err: any) {
+            res.status(500).json({ error: err.message })
+        }
+    }
+
     async createCurator(req: Request, res: Response) {
         const {
             last_name,

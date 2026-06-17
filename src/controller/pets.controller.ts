@@ -1,4 +1,4 @@
-import { Request, Response } from 'express';
+import { NextFunction, Request, Response } from 'express';
 import pool from '../config/db';
 
 class PetsController {
@@ -23,7 +23,7 @@ class PetsController {
     }
   }
 
-  async createPet(req: Request, res: Response) {
+  async createPet(req: Request, res: Response, next: NextFunction) {
     const {
       nickname,
       category,
@@ -37,11 +37,17 @@ class PetsController {
       for_cats,
       is_guest,
       description,
-      curator_id
+      curator_id,
+      image_1,
+      image_2,
+      image_3,
+      image_4,
+      image_5,
     } = req.body;
-
+    const client = await pool.connect();
     try {
-      const result = await pool.query(
+      await client.query('BEGIN');
+      const petResult = await client.query(
         `
             INSERT INTO pets (
                 nickname,
@@ -76,16 +82,52 @@ class PetsController {
           for_cats,
           is_guest,
           description,
-          curator_id
+          curator_id,
         ]
       );
 
-      res.status(201).json(result.rows[0]);
+      const pet = petResult.rows[0];
 
+      const images = [
+        image_1,
+        image_2,
+        image_3,
+        image_4,
+        image_5,
+      ];
+
+      for (let i = 0; i < images.length; i++) {
+        if (images[i] !== '') {
+          await client.query(
+            `
+                INSERT INTO pet_images (
+                    pet_id,
+                    image,
+                    number
+                )
+                VALUES (
+                    $1,
+                    $2,
+                    $3
+                )
+                `,
+            [
+              pet.id,
+              images[i],
+              i + 1,
+            ]
+          );
+        }
+      }
+      await client.query('COMMIT');
+      return next();
     } catch (err: any) {
-      res.status(500).json({
-        error: err.message
+      await client.query('ROLLBACK');
+      return res.status(500).json({
+        error: err.message,
       });
+    } finally {
+      client.release();
     }
   }
 
@@ -119,10 +161,10 @@ class PetsController {
       );
 
       if (result.rows.length === 0) {
-            return res.status(404).json({
-                error: 'Животное не найдено'
-            });
-        }
+        return res.status(404).json({
+          error: 'Животное не найдено'
+        });
+      }
 
       res.json(result.rows[0]);
     } catch (err: any) {
@@ -130,9 +172,8 @@ class PetsController {
     }
   }
 
-  async updatePet(req: Request, res: Response) {
+  async updatePet(req: Request, res: Response, next: NextFunction) {
     const { id } = req.params;
-
     const {
       nickname,
       category,
@@ -146,11 +187,19 @@ class PetsController {
       for_cats,
       is_guest,
       description,
-      curator_id
+      curator_id,
+      image_1,
+      image_2,
+      image_3,
+      image_4,
+      image_5,
     } = req.body;
 
+    const client = await pool.connect();
+
     try {
-      const result = await pool.query(
+      await client.query('BEGIN');
+      const petResult = await client.query(
         `
             UPDATE pets SET
                 nickname = $1,
@@ -183,31 +232,115 @@ class PetsController {
           is_guest,
           description,
           curator_id,
-          id
+          id,
         ]
       );
 
-      if (result.rows.length === 0) {
+      if (petResult.rows.length === 0) {
         return res.status(404).json({
-          error: 'Животное не найдено'
+          error: 'Животное не найдено',
         });
       }
 
-      res.json(result.rows[0]);
+      const pet = petResult.rows[0];
 
+      await client.query(
+        `DELETE FROM pet_images WHERE pet_id = $1`,
+        [id]
+      );
+
+      const images = [
+        image_1,
+        image_2,
+        image_3,
+        image_4,
+        image_5,
+      ];
+
+      for (let i = 0; i < images.length; i++) {
+        if (images[i] !== '') {
+          await client.query(
+            `
+                    INSERT INTO pet_images (
+                        pet_id,
+                        image,
+                        number
+                    )
+                    VALUES ($1, $2, $3)
+                    `,
+            [
+              pet.id,
+              images[i],
+              i + 1,
+            ]
+          );
+        }
+      }
+      await client.query('COMMIT');
+      return next();
     } catch (err: any) {
-      res.status(500).json({
-        error: err.message
+      await client.query('ROLLBACK');
+      return res.status(500).json({
+        error: err.message,
       });
+    } finally {
+      client.release();
     }
   }
 
-  async deletePet(req: Request, res: Response) {
+  async deletePet(req: Request, res: Response, next: NextFunction) {
     const { id } = req.params;
 
     try {
-      await pool.query('DELETE FROM pets WHERE id = $1', [id]);
-      res.json({ message: 'Удалено' });
+      const result = await pool.query('DELETE FROM pets WHERE id = $1', [id]);
+      if (result.rowCount === 0) {
+        return res.status(404).json({
+          error: 'Питомец не найден',
+        });
+      }
+      return next();
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  }
+
+  async getPetsDogs(req: Request, res: Response) {
+    try {
+      const result = await pool.query(`
+        SELECT
+          pets.id,
+          pets.nickname,
+          pets.birthday,
+          pets.gender,
+          curators.last_name,
+          curators.first_name
+        FROM pets
+        LEFT JOIN curators
+          ON pets.curator_id = curators.id
+        WHERE pets.category = 'Собака'
+        `);
+      res.json(result.rows);
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  }
+
+  async getPetsCats(req: Request, res: Response) {
+    try {
+      const result = await pool.query(`
+        SELECT
+          pets.id,
+          pets.nickname,
+          pets.birthday,
+          pets.gender,
+          curators.last_name,
+          curators.first_name
+        FROM pets
+        LEFT JOIN curators
+          ON pets.curator_id = curators.id
+        WHERE pets.category = 'Кошка'
+        `);
+      res.json(result.rows);
     } catch (err: any) {
       res.status(500).json({ error: err.message });
     }
